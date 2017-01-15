@@ -44,9 +44,9 @@ namespace NUnit.Gui.Presenters
 
         private void WireUpEvents()
         {
-            _model.TestLoaded += (ea) => { Initialize(100); };
-            _model.TestUnloaded += (ea) => { Initialize(100); };
-            _model.TestReloaded += (ea) => { Initialize(100); };
+            _model.TestLoaded += (ea) => { Initialize(ea.Test.TestCount); };
+            _model.TestUnloaded += (ea) => { Initialize(0); };
+            _model.TestReloaded += (ea) => { Initialize(ea.Test.TestCount); };
             _model.RunStarting += (ea) => { Initialize(ea.TestCount); };
             _model.TestFinished += (ea) => { ReportTestOutcome(ea.Result); };
             _model.SuiteFinished += (ea) => { ReportTestOutcome(ea.Result); };

@@ -34,6 +34,12 @@ namespace NUnit.UiKit.Controls
         Warning = 1,
         Failure = 2
     }
+    public enum TestProgressBarTextFormat
+    {
+        Percent = 0,
+        ByTest = 1
+    }
+
 
     public class NUnitProgressBar : ProgressBar
     {
@@ -47,8 +53,11 @@ namespace NUnit.UiKit.Controls
         private Brush _brush;
 
         private Font _font;
+        private FontFamily _fontFamily;
+        
 
         private int _curHeight; // Height changes between constructor and OnPaint. Storing it to detect change so the font size could be recalculated.
+        private const string _strFormat = "{0} of {1}";
 
         public NUnitProgressBar()
         {
@@ -56,21 +65,13 @@ namespace NUnit.UiKit.Controls
             _curHeight = this.Height ;
             _status = TestProgressBarStatus.Success;
             _brush = CreateBrush(_status);
-            _font = new Font("Arial", 1);
-            //FontFamily fontFamily = new Font("Arial",1).FontFamily;
-            //int ascent = fontFamily.GetCellAscent(FontStyle.Regular);
-            //int emHeight = fontFamily.GetEmHeight(FontStyle.Regular);
-            //int pixel =5;
-            //_font.Size.s
-            //float Size = (pixel  * emHeight) / ascent;
-            _font = new Font(_font.FontFamily, CalculateFontSize());
-   //         _font.S
-   //         ascentPixel =
-   //font.Size * ascent / fontFamily.GetEmHeight(FontStyle.Regular);
-   //         int ascent = _font.FontFamily.GetCellAscent(FontStyle.Regular);
+            _fontFamily = FontFamily.GenericSansSerif;
+            _font = new Font(_fontFamily, CalculateFontSize());
         }
 
         #region Properties
+
+        public TestProgressBarTextFormat TextFormat { get; set; }
 
         private TestProgressBarStatus _status = TestProgressBarStatus.Success;
         public TestProgressBarStatus Status
@@ -103,13 +104,28 @@ namespace NUnit.UiKit.Controls
             rec.Inflate(-1, -1);
             rec.Width = (int)(rec.Width * percent);
             e.Graphics.FillRectangle(_brush, rec); //2, 2, rec.Width, rec.Height);
-            string strPercent = percent.ToString("P2");
+            string strPercent = TextFormat == TestProgressBarTextFormat.ByTest ? String.Format(_strFormat, Value, Maximum) : percent.ToString("P2");
+            SizeF strSize;
             if (_curHeight != rec.Height) {
                 _curHeight = rec.Height;
-                _font = new Font(_font.FontFamily,CalculateFontSize());
+                int size = CalculateFontSize();
+                Font tmp = new Font(_font.FontFamily, CalculateFontSize());
+                strSize = e.Graphics.MeasureString(strPercent, tmp);
+                if (strSize.Width <= this.ClientRectangle.Width)
+                {
+                    _font.Dispose();
+                    _font = tmp;
+                }else
+                {
+                    tmp.Dispose();
+                }
+            }else
+            {
+                strSize = e.Graphics.MeasureString(strPercent, _font);
             }
-            SizeF strSize= e.Graphics.MeasureString(strPercent,_font);
-            e.Graphics.DrawString(strPercent, _font, new SolidBrush(Color.Black), (this.ClientRectangle.Width- strSize.Width) / 2, rec.Y);
+            float x = (this.ClientRectangle.Width - strSize.Width) < 0 ? 0: this.ClientRectangle.Width - strSize.Width;
+            float y = (this.ClientRectangle.Height - strSize.Height) < 0 ? 0 : this.ClientRectangle.Height - strSize.Height;
+            e.Graphics.DrawString(strPercent, _font, new SolidBrush(Color.Black), x / 2, y/ 2);
         }
 
         private Brush CreateBrush(TestProgressBarStatus status)
@@ -123,8 +139,8 @@ namespace NUnit.UiKit.Controls
         }
 
         private int CalculateFontSize() {
-            int ascent = _font.FontFamily.GetCellAscent(FontStyle.Regular);
-            int emHeight = _font.FontFamily.GetEmHeight(FontStyle.Regular);
+            int ascent = _fontFamily.GetCellAscent(FontStyle.Regular) + _fontFamily.GetCellDescent(FontStyle.Regular) + _fontFamily.GetCellDescent(FontStyle.Regular);
+            int emHeight = _fontFamily.GetEmHeight(FontStyle.Regular);
             return ((int)(_curHeight*0.9f) * emHeight) / ascent;
         }
 

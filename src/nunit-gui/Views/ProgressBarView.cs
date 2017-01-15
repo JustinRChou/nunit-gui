@@ -47,7 +47,7 @@ namespace NUnit.Gui.Views
 
         public void Initialize(int max)
         {
-            Debug.Assert(max > 0, "Maximum value must be > 0");
+            Debug.Assert(max >= 0, "Maximum value must be >= 0");
 
             _maximum = max;
             _progress = 0;
@@ -83,6 +83,12 @@ namespace NUnit.Gui.Views
                 _status = value;
                 InvokeIfRequired(() => { testProgressBar.Status = _status; });
             }
+        }
+
+        public TestProgressBarTextFormat TextFormat
+        {
+            get { return testProgressBar.TextFormat; }
+            set { testProgressBar.TextFormat = value; }
         }
 
         private void InvokeIfRequired(MethodInvoker _delegate)
